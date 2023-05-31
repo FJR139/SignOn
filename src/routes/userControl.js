@@ -1,14 +1,11 @@
 const express = require("express");
-const bodyParser = require("body-parser");
 const bcrypt = require("bcryptjs");
 const validator = require("validator");
+const router = express.Router();
 
-const app = express();
-app.use(bodyParser.json());
+const users = require("./user"); //database for user
 
-const users = require("./user");
-
-app.post("/register", (req, res) => {
+router.post("/register", (req, res) => {
   const { email, username, password } = req.body;
 
   const isEmailValid = validator.isEmail(email);
@@ -35,11 +32,25 @@ app.post("/register", (req, res) => {
   res.status(201).send({ message: "User registered successfully" });
 });
 
-app.get("/users", (req, res) => {
+router.post("/login", (req, res) => {
+  const { username, password } = req.body;
+
+  const user = users.find((u) => u.username === username);
+
+  if (!username) {
+    return res.status(401).send({ message: "Invalid username or password" });
+  }
+
+  const passwordMatch = bcrypt.compareSync(password, user.password);
+  if (!passwordMatch) {
+    return res.status(401).send({ message: "Invalid username or password" });
+  }
+
+  res.status(201).send({ message: "Login succesfully" });
+});
+
+router.get("/list", (req, res) => {
   res.status(201).send(users);
 });
 
-const port = process.env.PORT || 3000;
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
-});
+module.exports = router;
